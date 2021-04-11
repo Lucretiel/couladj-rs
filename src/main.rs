@@ -81,25 +81,38 @@ fn couladj_generic_rayon(
 ) -> HashSet<PixelPair> {
     let rect = Rectangle { dimensions };
     buffer
+        // For each pixel in the buffer...
         .par_iter()
         .copied()
         .enumerate()
+        // Compute the coordinates of the pixel, based on the index
         .map(|(index, pixel)| (from_index(index, rect.dimensions), pixel))
+        // Process each pixel
         .flat_map_iter(|(location, pixel)| {
             adjacencies
+                // For each adjacency (up, down, left, right, etc)...
                 .iter()
                 .copied()
+                // Compute the coordinates of the neighbor
                 .map(move |neighbor_vec| location + neighbor_vec)
-                .filter_map(|neighbor_coords| rect.check_location(neighbor_coords).ok())
+                // Bounds check the neighbor's coordinates
+                .filter(|neighbor_coords| rect.location_in_bounds(neighbor_coords))
+                // Convert the (x, y) coordinates to an index
                 .map(|neighbor_coords| to_index(neighbor_coords, rect.dimensions))
+                // Look up the neighbor
                 .map(|neighbor_index| buffer[neighbor_index])
+                // Skip the neighbor if it's the same as the origin
                 .filter(move |&neighbor| neighbor != pixel)
+                // Create a PixelPair to add to the set
                 .map(move |neighbor| PixelPair {
                     origin: pixel,
                     neighbor,
                 })
         })
+        // Collect all the pixel pairs into a HashMap. This runs once
+        // for each thread
         .fold(HashSet::new, |set, pair| cascade!(set; ..insert(pair);))
+        // Merge all the HashMaps together
         .reduce(HashSet::new, |set1, set2| {
             match set1.capacity() > set2.capacity() {
                 true => cascade!(set1; ..extend(set2);),
