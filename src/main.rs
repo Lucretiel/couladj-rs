@@ -123,21 +123,17 @@ fn couladj_generic_rayon(
 
 #[derive(Debug, StructOpt)]
 struct Args {
-    #[structopt(short, long, help = "The image file to analyze")]
+    /// The image file to analyze
+    #[structopt(short, long)]
     file: PathBuf,
 
-    #[structopt(
-        short = "a",
-        long,
-        help = "If given, adjacencies will be computed for all 8 directions, rather than the 4 cardinal directions"
-    )]
+    /// If given, adjacencies will be computed for all 8 directions, rather
+    /// than the 4 cardinal directions.
+    #[structopt(short = "a", long)]
     full_adjacencies: bool,
 
-    #[structopt(
-        short,
-        long,
-        help = "Instead of a tsv, just input the number of unique pairs"
-    )]
+    /// Instead of a tsv, just input the number of unique pairs.
+    #[structopt(short, long)]
     count: bool,
 }
 
