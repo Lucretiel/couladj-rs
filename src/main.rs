@@ -71,29 +71,28 @@ impl GridBounds for Rectangle {
 ///
 /// `buffer` is a 2D buffer of pixels, flattened in row- or column- major order.
 /// `dimensions` is the dimensions of the original image
-/// `adjacencies` is the directions that are checked per-pixel
+/// `adjacencies` is the directions that are checked per-pixel. For example,
+/// when checking 4-way adjacencies, it might be `[(0, 1), (1, 0), (-1, 0), (0, -1)]`
 #[inline]
-fn couladj_generic_rayon<A>(
+fn couladj_generic_rayon(
     buffer: &[Rgba<u8>],
     dimensions: Vector,
-    adjacencies: A,
-) -> HashSet<PixelPair>
-where
-    A: Iterator<Item = Vector> + Clone + Sync,
-{
+    adjacencies: &[Vector],
+) -> HashSet<PixelPair> {
     let rect = Rectangle { dimensions };
     buffer
         .par_iter()
         .copied()
         .enumerate()
-        .flat_map_iter(|(index, pixel)| {
-            let location = from_index(index, rect.dimensions);
+        .map(|(index, pixel)| (from_index(index, rect.dimensions), pixel))
+        .flat_map_iter(|(location, pixel)| {
             adjacencies
-                .clone()
+                .iter()
+                .copied()
                 .map(move |neighbor_vec| location + neighbor_vec)
-                .filter_map(|neighbor| rect.check_location(neighbor).ok())
-                .map(|neighbor| to_index(neighbor, rect.dimensions))
-                .map(|neighbor| buffer[neighbor])
+                .filter_map(|neighbor_coords| rect.check_location(neighbor_coords).ok())
+                .map(|neighbor_coords| to_index(neighbor_coords, rect.dimensions))
+                .map(|neighbor_index| buffer[neighbor_index])
                 .filter(move |&neighbor| neighbor != pixel)
                 .map(move |neighbor| PixelPair {
                     origin: pixel,
@@ -155,22 +154,16 @@ fn main() -> anyhow::Result<()> {
     eprintln!("Calculating adjacencies...");
     let now = Instant::now();
     let mut result = match args.full_adjacencies {
-        false => couladj_generic_rayon(
-            &buffer,
-            dimensions,
-            [Down.as_vector(), Right.as_vector()].iter().copied(),
-        ),
+        false => couladj_generic_rayon(&buffer, dimensions, &[Down.as_vector(), Right.as_vector()]),
         true => couladj_generic_rayon(
             &buffer,
             dimensions,
-            [
+            &[
                 Down.as_vector(),
                 Right.as_vector(),
                 Down + Left,
                 Down + Right,
-            ]
-            .iter()
-            .copied(),
+            ],
         ),
     };
     eprintln!("  {:?}", now.elapsed());
