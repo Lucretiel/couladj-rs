@@ -135,9 +135,9 @@ fn main() -> anyhow::Result<()> {
     let now = Instant::now();
     let (dimensions, buffer) = {
         let image = ImageReader::open(&args.file)
-            .with_context(|| format!("Failed to open image file '{:?}'", args.file))?
+            .with_context(|| format!("Failed to open image file {:?}", args.file))?
             .decode()
-            .with_context(|| format!("Failed to read image file data from '{:?}'", args.file))?;
+            .with_context(|| format!("Failed to read image file data from {:?}", args.file))?;
 
         let pixel_buffer: Vec<Rgba<u8>> = image.pixels().map(|(_, _, pixel)| pixel).collect();
 
@@ -174,11 +174,14 @@ fn main() -> anyhow::Result<()> {
     if args.count {
         println!("Found {} unique adjacencies", result.len())
     } else {
+        eprintln!("Sorting adjacencies...");
+        let now = Instant::now();
         let data = {
             let mut data: Vec<PixelPair> = result.iter().copied().collect();
             data.sort_unstable();
             data
         };
+        eprintln!("  {:?}", now.elapsed());
 
         println!("r\tg\tb\ta\tadj_r\tadj_g\tadj_b\tadj_a");
 
