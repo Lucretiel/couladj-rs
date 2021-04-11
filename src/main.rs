@@ -11,26 +11,6 @@ use structopt::StructOpt;
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
 
-#[derive(Debug, StructOpt)]
-struct Args {
-    #[structopt(short, long, help = "The image file to analyze")]
-    file: PathBuf,
-
-    #[structopt(
-        short = "a",
-        long,
-        help = "If given, adjacencies will be computed for all 8 directions, rather than the 4 cardinal directions"
-    )]
-    full_adjacencies: bool,
-
-    #[structopt(
-        short,
-        long,
-        help = "Instead of a tsv, just input the number of unique pairs"
-    )]
-    count: bool,
-}
-
 fn to_index(location: Location, dimensions: Vector) -> usize {
     (location.row.0 as usize * dimensions.columns.0 as usize) + (location.column.0 as usize)
 }
@@ -127,6 +107,26 @@ where
                 false => cascade!(set2; ..extend(set1);),
             }
         })
+}
+
+#[derive(Debug, StructOpt)]
+struct Args {
+    #[structopt(short, long, help = "The image file to analyze")]
+    file: PathBuf,
+
+    #[structopt(
+        short = "a",
+        long,
+        help = "If given, adjacencies will be computed for all 8 directions, rather than the 4 cardinal directions"
+    )]
+    full_adjacencies: bool,
+
+    #[structopt(
+        short,
+        long,
+        help = "Instead of a tsv, just input the number of unique pairs"
+    )]
+    count: bool,
 }
 
 fn main() -> anyhow::Result<()> {
