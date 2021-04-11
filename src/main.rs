@@ -94,7 +94,7 @@ fn couladj_generic_rayon(
                 .iter()
                 .copied()
                 // Compute the coordinates of the neighbor
-                .map(move |neighbor_vec| location + neighbor_vec)
+                .map(move |delta| location + delta)
                 // Bounds check the neighbor's coordinates
                 .filter(|neighbor_coords| rect.location_in_bounds(neighbor_coords))
                 // Convert the (x, y) coordinates to an index
