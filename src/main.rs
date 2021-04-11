@@ -1,4 +1,4 @@
-use std::{collections::HashSet, path::PathBuf};
+use std::{collections::HashSet, path::PathBuf, time::Instant};
 
 use anyhow::Context;
 use cascade::cascade;
@@ -132,6 +132,8 @@ where
 fn main() -> anyhow::Result<()> {
     let args = Args::from_args();
 
+    eprintln!("Loading image...");
+    let now = Instant::now();
     let (dimensions, buffer) = {
         let image = ImageReader::open(&args.file)
             .with_context(|| format!("Failed to open image file '{:?}'", args.file))?
@@ -148,7 +150,10 @@ fn main() -> anyhow::Result<()> {
 
         (dimensions, pixel_buffer)
     };
+    eprintln!("  {:?}", now.elapsed());
 
+    eprintln!("Calculating adjacencies...");
+    let now = Instant::now();
     let mut result = match args.full_adjacencies {
         false => couladj_generic_rayon(
             &buffer,
@@ -168,6 +173,7 @@ fn main() -> anyhow::Result<()> {
             .copied(),
         ),
     };
+    eprintln!("  {:?}", now.elapsed());
 
     // We only search for 1-way adjacencies; make sure our set is bidirectional
     result.extend(result.clone().iter().map(|pair| pair.swap()));
